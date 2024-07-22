@@ -92,3 +92,32 @@ The `.json` file for Grafana visualization is under `grafana` directory for usin
 ### node-exporter
 
 Open source dashboard showing extensive metrics from `node-exporter` https://github.com/rfmoz/grafana-dashboards (via https://grafana.com/grafana/dashboards/1860-node-exporter-full/)
+
+```
+stress-ng --cpu 4 --io 2 --vm 1 --vm-bytes 1G --timeout 600s
+
+This command will provide a comprehensive stress test on your system by putting load on the CPU, I/O, and memory.
+
+
+```
+### Stress Test Results
+
+1) Disk Stress
+
+Command to stress test storage - **`stress-ng --hdd 5`**. 10mins running results
+
+![disk.png](visualization%2F1%2Fdisk.png)
+![memory.png](visualization%2F1%2Fmemory.png)
+![process.png](visualization%2F1%2Fprocess.png)
+![system.png](visualization%2F1%2Fsystem.png)
+![pressure.png](visualization%2F1%2Fpressure.png)
+![storage.png](visualization%2F1%2Fstorage.png)
+![storage_ext.png](visualization%2F1%2Fstorage_ext.png)
+
+1) CPU Stress
+
+Command to stress test CPU - **`stress-ng --cpu 4`**. 10mins running results
+
+![summary.png](visualization%2F2%2Fsummary.png)
+![basic_cpu.png](visualization%2F2%2Fbasic_cpu.png)
+![cpu.png](visualization%2F2%2Fcpu.png)
