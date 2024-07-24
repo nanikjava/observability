@@ -88,13 +88,6 @@ Dashboard `.json` can be found [in this link ](https://grafana.com/grafana/dashb
 
 Dashboard utilize the `node-exporter` [open source project ](https://github.com/prometheus/node_exporter)
 
-```
-stress-ng --cpu 4 --io 2 --vm 1 --vm-bytes 1G --timeout 600s
-
-This command will provide a comprehensive stress test on your system by putting load on the CPU, I/O, and memory.
-
-
-```
 ### Stress Test Results
 
 | Disk Stress  | Comments                                                                          | Screenshots                                                                                                                                                                                                                                                                                                                                     |
