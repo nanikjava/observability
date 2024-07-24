@@ -2,10 +2,6 @@
 
 Collect prometheus metrics for Linux machines to be consumed using Prometheus and Grafana.
 
-### Linux
-
-This project https://github.com/flaviostutz/perfstat is used for collection Linux metrics.
-
 ### Prometheus & Grafana
 
 * Following is the `compose.yaml` file for Docker compose
