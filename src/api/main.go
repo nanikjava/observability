@@ -40,6 +40,12 @@ var (
 		},
 		[]string{"status_code"},
 	)
+	fetchErrors = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "dog_images_fetched_errors_total",
+			Help: "Total number of errors when trying to fetch images.",
+		},
+	)
 )
 
 func init() {
@@ -47,6 +53,7 @@ func init() {
 	prometheus.MustRegister(imagesFetched)
 	prometheus.MustRegister(fetchDuration)
 	prometheus.MustRegister(httpStatusCodes)
+	prometheus.MustRegister(fetchErrors)
 }
 
 func fetchImageURL() (string, error) {
