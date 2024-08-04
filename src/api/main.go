@@ -1,70 +1,138 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-type Joke struct {
-	ID        int    `json:"id"`
-	Type      string `json:"type"`
-	Setup     string `json:"setup"`
-	Punchline string `json:"punchline"`
+type DogImageResponse struct {
+	Message string `json:"message"`
+	Status  string `json:"status"`
 }
 
-func fetchJoke() (Joke, error) {
-	resp, err := http.Get("https://official-joke-api.appspot.com/jokes/random")
+// Define Prometheus metrics
+var (
+	imagesFetched = prometheus.NewCounter(
+		prometheus.CounterOpts{
+			Name: "dog_images_fetched_total",
+			Help: "Total number of dog images fetched.",
+		},
+	)
+	fetchDuration = prometheus.NewHistogram(
+		prometheus.HistogramOpts{
+			Name:    "dog_image_fetch_duration_seconds",
+			Help:    "Histogram of the duration of dog image fetches.",
+			Buckets: prometheus.DefBuckets,
+		},
+	)
+	httpStatusCodes = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "dog_http_status_codes_total",
+			Help: "Total number of HTTP status codes received.",
+		},
+		[]string{"status_code"},
+	)
+)
+
+func init() {
+	// Register metrics with Prometheus
+	prometheus.MustRegister(imagesFetched)
+	prometheus.MustRegister(fetchDuration)
+	prometheus.MustRegister(httpStatusCodes)
+}
+
+func fetchImageURL() (string, error) {
+	start := time.Now()
+	resp, err := http.Get("https://dog.ceo/api/breeds/image/random")
 	if err != nil {
-		return Joke{}, err
+		return "", err
 	}
 	defer resp.Body.Close()
 
-	var joke Joke
-	if err := json.NewDecoder(resp.Body).Decode(&joke); err != nil {
-		return Joke{}, err
+	// Record the HTTP status code
+	httpStatusCodes.WithLabelValues(fmt.Sprintf("%d", resp.StatusCode)).Inc()
+
+	var dogImageResp DogImageResponse
+	if err := json.NewDecoder(resp.Body).Decode(&dogImageResp); err != nil {
+		return "", err
 	}
 
-	return joke, nil
+	if dogImageResp.Status != "success" {
+		return "", fmt.Errorf("unsuccessful status: %s", dogImageResp.Status)
+	}
+
+	// Record the duration
+	fetchDuration.Observe(time.Since(start).Seconds())
+	imagesFetched.Inc() // Increment the images fetched counter
+
+	return dogImageResp.Message, nil
+}
+func downloadImage(url string, wg *sync.WaitGroup) {
+	resp, err := http.Get(url)
+	if err != nil {
+		fmt.Println("Error downloading image:", err)
+		return
+	}
+	defer resp.Body.Close()
+
+	// Copy the image data into memory
+	var imageBuffer bytes.Buffer
+	_, err = io.Copy(&imageBuffer, resp.Body)
+	if err != nil {
+		fmt.Println("Error copying image data:", err)
+		return
+	}
+
+	// Process the image data in memory
+	fmt.Printf("Downloaded image size: %d bytes\n", imageBuffer.Len())
 }
 
-func fetchAndPrintJoke(wg *sync.WaitGroup) {
+func fetchAndDownloadImage(wg *sync.WaitGroup) {
 	defer wg.Done() // Decrement the counter when the goroutine completes
 
-	joke, err := fetchJoke()
+	imageURL, err := fetchImageURL()
 	if err != nil {
-		fmt.Println("Error fetching joke:", err)
+		fmt.Println("Error fetching image URL:", err)
 		return
 	}
 
-	jokePretty, err := json.MarshalIndent(joke, "", "  ")
-	if err != nil {
-		fmt.Println("Error formatting joke:", err)
-		return
-	}
-
-	fmt.Println(string(jokePretty))
+	downloadImage(imageURL, wg)
 }
 
 func main() {
+	// Start Prometheus HTTP handler
+	go func() {
+		http.Handle("/metrics", promhttp.Handler())
+		fmt.Println("Starting Prometheus metrics server on :2112")
+		if err := http.ListenAndServe(":2112", nil); err != nil {
+			fmt.Println("Error starting Prometheus metrics server:", err)
+		}
+	}()
+
 	for {
 		// Create a WaitGroup to wait for all goroutines to finish
 		var wg sync.WaitGroup
-		numGoroutines := 10
+		numGoroutines := 2
 
 		// Spin up 10 goroutines
 		for i := 0; i < numGoroutines; i++ {
 			wg.Add(1) // Increment the WaitGroup counter
-			go fetchAndPrintJoke(&wg)
+			go fetchAndDownloadImage(&wg)
 		}
 
 		// Wait for all goroutines to finish
 		wg.Wait()
 
 		// Sleep for 10 seconds before starting the process again
-		fmt.Println("All jokes fetched. Sleeping for 10 seconds...")
+		fmt.Println("All images fetched and downloaded. Sleeping for 10 seconds...")
 		time.Sleep(10 * time.Second)
 	}
 }
