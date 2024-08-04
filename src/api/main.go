@@ -86,6 +86,7 @@ func downloadImage(url string, wg *sync.WaitGroup) {
 	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Println("Error downloading image:", err)
+		fetchErrors.Inc()
 		return
 	}
 	defer resp.Body.Close()
@@ -107,6 +108,7 @@ func fetchAndDownloadImage(wg *sync.WaitGroup) {
 
 	imageURL, err := fetchImageURL()
 	if err != nil {
+		fetchErrors.Inc()
 		fmt.Println("Error fetching image URL:", err)
 		return
 	}
