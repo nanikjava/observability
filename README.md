@@ -31,7 +31,7 @@ Docker compose file is available under [compose.yaml](compose.yaml)
 ### Prometheus & Grafana
 * Prometheus [configuration file](prometheus%2Fprometheus.yml)
 
-* Grafana [configuration file]](grafana%2Fdatasource.yml)
+* Grafana [configuration file](grafana%2Fdatasource.yml)
 
 ### Visualization
 
