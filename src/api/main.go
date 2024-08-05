@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+	"math/rand"
+
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -129,8 +131,13 @@ func main() {
 	for {
 		// Create a WaitGroup to wait for all goroutines to finish
 		var wg sync.WaitGroup
-		numGoroutines := 2
 
+		rand.Seed(time.Now().UnixNano())
+
+		min := 10
+		max := 30
+		numGoroutines:=rand.Intn(max-min+1) + min
+		
 		// Spin up 10 goroutines
 		for i := 0; i < numGoroutines; i++ {
 			wg.Add(1) // Increment the WaitGroup counter
@@ -142,6 +149,6 @@ func main() {
 
 		// Sleep for 10 seconds before starting the process again
 		fmt.Println("All images fetched and downloaded. Sleeping for 10 seconds...")
-		time.Sleep(10 * time.Second)
+		time.Sleep(3 * time.Second)
 	}
 }
