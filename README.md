@@ -1,93 +1,42 @@
 
-### Context
+### Repository
 
-Collect prometheus metrics for Linux machines to be consumed using Prometheus and Grafana.
+This repository contain experiment result to learn and understand pattern how Linux system react when it is under load in different scenarios and use cases. 
+
+System specification used for this experiment:
+
+```
+HP EliteDesk 800 G2 SFF 
+Intel(R) Core(TM) i5-6500 CPU @ 3.20GHz
+8GiB System Memory
+128GB SanDisk 
+```
+
+![elitedesk.jpeg](images%2Felitedesk.jpeg)
+
+This repository use Prometheus as metric collector and Grafana to display the metric information. Out-of-the-box storage is used, so no additional storage are
+used for storing the metrics.
+
+### Goals
+
+The end goal of this experiment is to learn as much as possible to understand different scenarios and use cases when system are under stress. This will give better
+understanding regardless whether it is a single computer or mega cluster.
+
+Understanding the different aspects of the hardware being stress tested will surface patterns that can be used to troubleshoot production environment. 
+
+### Docker Compose
+
+Docker compose file is available under [compose.yaml](compose.yaml)
 
 ### Prometheus & Grafana
+* Prometheus [configuration file](prometheus%2Fprometheus.yml)
 
-* Following is the `compose.yaml` file for Docker compose
-
-```
-services:
-  prometheus:
-    image: prom/prometheus
-    container_name: prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-    ports:
-      - 9090:9090
-    restart: unless-stopped
-    volumes:
-      - ./prometheus:/etc/prometheus
-      - prom_data:/prometheus
-    networks:
-      - monitoring
-  grafana:
-    image: grafana/grafana
-    container_name: grafana
-    ports:
-      - 3000:3000
-    restart: unless-stopped
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=grafana
-    volumes:
-      - ./grafana:/etc/grafana/provisioning/datasources
-    networks:
-      - monitoring
-volumes:
-  prom_data:
-networks:
-  monitoring:
-```
-
-* Prometheus `prometheus.yml` config file
-
-```
-global:
-  scrape_interval: 7s
-  scrape_timeout: 5s
-  evaluation_interval: 5s
-alerting:
-  alertmanagers:
-  - static_configs:
-    - targets: []
-    scheme: http
-    timeout: 10s
-    api_version: v1
-scrape_configs:
-- job_name: host-node
-  honor_timestamps: true
-  scrape_interval: 5s
-  scrape_timeout: 5s
-  metrics_path: /metrics
-  scheme: http
-  static_configs:
-  - targets:
-    - 192.168.1.3:8880
-```
-
-* Grafana `datasource.yml` config file
-
-```
-apiVersion: 1
-
-datasources:
-- name: Prometheus
-  type: prometheus
-  url: http://prometheus:9090 
-  isDefault: true
-  access: proxy
-  editable: true
-```
+* Grafana [configuration file]](grafana%2Fdatasource.yml)
 
 ### Visualization
 
-Dashboard `.json` can be found [in this link ](https://grafana.com/grafana/dashboards/1860-node-exporter-full/)
-
-### node-exporter
-
-Dashboard utilize the `node-exporter` [open source project ](https://github.com/prometheus/node_exporter)
+Dashboard `.json` can be found [in this link ](grafana%2Fdashboard.json). The dashboard utilize the `node-exporter`
+[open source project ](https://github.com/prometheus/node_exporter)
 
 ### Stress Test Results
 
@@ -98,4 +47,6 @@ Dashboard utilize the `node-exporter` [open source project ](https://github.com/
 | All Stress       | Command to stress all resources - **`stress-ng --cpu 4 --io 3 --vm 3 --vm-bytes 3G --timeout 600s`**. Test timeout 60s                                                                                                                                                          | ![disk_iops.png](visualization%2F3%2Fdisk_iops.png) ![disk_rw_stats.png](visualization%2F3%2Fdisk_rw_stats.png) ![io_utilization.png](visualization%2F3%2Fio_utilization.png) ![system_pressure.png](visualization%2F3%2Fsystem_pressure.png)                                                                                                   |
 | Go memory stress | The stress test is using code available in `src/4/main.go`. Compile and run the code and watch the result in the dashboard.                                                                                                                                                     | ![basic_cpu_mem_disk.png](visualization%2F4%2Fbasic_cpu_mem_disk.png) ![cpu_memory_stack.png](visualization%2F4%2Fcpu_memory_stack.png) ![memory_pages.png](visualization%2F4%2Fmemory_pages.png) ![stall_information.png](visualization%2F4%2Fstall_information.png) ![io_utilization.png](visualization%2F4%2Fio_utilization.png)             |
 | API Errors       | This stress test uses `stress-ng` with job file [network.job](stress-ng-jobs/network.job) is to test how an API application in `src/api` reacts when the network `epoll` and `sock` stressor are enabled. Error<br/>generated can be seen in [errors.md](src/api/errors.md) | ![network.png](visualization%2Fapi%2Fnetwork.png) ![api_errors.png](visualization%2Fapi%2Fapi_errors.png) ![cpu.png](visualization%2Fapi%2Fcpu.png)                                                                                                                                                                                             |
+
+
 
